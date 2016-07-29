@@ -1,0 +1,29 @@
+{
+  "name": "tg-logsaver",
+  "version": "0.0.0",
+  "description": "Save message history from Telegram Messenger",
+  "license": "ISC",
+  "author": {
+    "name": "Paul Marrapese",
+    "email": "paul.marrapese@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pmarrapese/tg-logsaver.git"
+  },
+  "homepage": "https://github.com/pmarrapese/tg-logsaver",
+  "bugs": "https://github.com/pmarrapese/tg-logsaver/issues",
+  "main": "index.js",
+  "keywords": [
+    "telegram"
+  ],
+  "dependencies": {
+    "@pmarrapese/node-boilerplate": "git+https://github.com/pmarrapese/node-boilerplate.git",
+    "get-log": "latest",
+    "lodash": "^4.12.0",
+    "mkdirp": "^0.5.1",
+    "moment": "^2.13.0",
+    "telegram-mt-node": "0.9.7",
+    "telegram.link": "0.6.4"
+  }
+}

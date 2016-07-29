@@ -1,0 +1,13 @@
+{
+  "app": {
+    "id": "",
+    "hash": "",
+    "dataCenter": ""
+  },
+  "user": {
+    "authKey": {
+      "id": "",
+      "value": ""
+    }
+  }
+}
