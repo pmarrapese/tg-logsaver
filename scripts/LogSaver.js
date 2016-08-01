@@ -14,9 +14,19 @@ const APP_VERSION = require('../package.json').version;
 
 class LogSaver extends require('../lib/App') {
   *run() {
-    yield this.connect();
-    yield this.getUsers();
-    yield this.saveLogs();
+    try {
+      yield this.connect();
+      yield this.getUsers();
+      yield this.saveLogs();
+    } catch (e) {
+      switch (e.code) {
+        case 401:
+          App.die('Your authorization key has expired. Please re-run the authorization script.', `(${e.message})`);
+      }
+
+      App.die(e);
+    }
+
     process.exit(0);
   }
 
