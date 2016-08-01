@@ -4,25 +4,15 @@
 
 "use strict";
 
-const TelegramClient = require('../lib/TelegramClient');
 const Utility = require('../lib/Utility');
-
-const APP_VERSION = require('../package.json').version;
 
 class Authorize extends require('../lib/App') {
   *run() {
-    yield this.connect();
+    yield this.connect(false);
     yield this.sendLoginCode();
     yield this.login();
     this.saveAuthKey();
     process.exit(0);
-  }
-
-  *connect() {
-    this.client = new TelegramClient(this.config.app.id, this.config.app.hash, APP_VERSION, this.config.app.dataCenter);
-    this.debug(`Connecting to Telegram (${this.client.dataCenter.host})...`);
-    yield this.client.connect();
-    this.debug('Connected.');
   }
 
   /**
@@ -103,8 +93,7 @@ class Authorize extends require('../lib/App') {
    */
   saveAuthKey() {
     this.debug('Updating config with auth key...');
-    this.config.user.authKey.id = this.client.authKey.key.id.toString('hex');
-    this.config.user.authKey.value = this.client.authKey.key.value.toString('hex');
+    this.config.user.encryptedAuthKey = this.client.authKey.key.encrypt(this.config.app.hash).toString('hex');
     this.config.write();
     this.log('Config updated.');
   }

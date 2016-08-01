@@ -5,9 +5,6 @@
     "dataCenter": ""
   },
   "user": {
-    "authKey": {
-      "id": "",
-      "value": ""
-    }
+    "encryptedAuthKey": ""
   }
 }

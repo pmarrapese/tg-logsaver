@@ -3,7 +3,7 @@
 This [Node.js](https://nodejs.org) application automates downloading of messages from [Telegram Messenger](https://telegram.org/).
 
 ## Requirements
-This application requires an ES6-friendly version of Node. It was developed on Node v6.
+This application requires an ES6-friendly version of Node. It should run on Node v4 and higher.
 
 ## Usage
 ### Obtaining App ID and App Hash
@@ -18,8 +18,6 @@ The application must then be authorized to use your Telegram account. To do this
 
 ### Saving Logs
 To save all logs, simply run `node ./ save` in the project root directory. Logs are saved in the `logs` directory. It may take a while to complete, as the Telegram API limits the amount of messages that may be retrieved at one time.
-
-Logs are saved in the `logs` directory of the application.
 
 **Note:** This application currently only support saving messages between users (i.e. not groups)
 

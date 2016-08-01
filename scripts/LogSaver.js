@@ -4,7 +4,6 @@
 
 "use strict";
 
-const TelegramClient = require('../lib/TelegramClient');
 const TelegramUser = require('../lib/TelegramUser');
 const Utility = require('../lib/Utility');
 const moment = require('moment');
@@ -19,17 +18,6 @@ class LogSaver extends require('../lib/App') {
     yield this.getUsers();
     yield this.saveLogs();
     process.exit(0);
-  }
-
-  *connect() {
-    if (!this.config.user.authKey.id || !this.config.user.authKey.value) {
-      return this.die('You are not logged in to Telegram. Please run "node ./ auth" to login.');
-    }
-
-    this.client = new TelegramClient(this.config.app.id, this.config.app.hash, APP_VERSION, this.config.app.dataCenter, this.config.user.authKey);
-    this.debug(`Connecting to Telegram (${this.client.dataCenter.host})...`);
-    yield this.client.connect();
-    this.debug('Connected.');
   }
 
   /**
