@@ -8,9 +8,8 @@ const TelegramUser = require('../lib/TelegramUser');
 const Utility = require('../lib/Utility');
 const moment = require('moment');
 const fs = require('fs');
+const path = require('path');
 const mkdirp = require('mkdirp');
-
-const APP_VERSION = require('../package.json').version;
 
 class LogSaver extends require('../lib/App') {
   *run() {
@@ -71,42 +70,22 @@ class LogSaver extends require('../lib/App') {
         continue;
       }
 
-      // Get all message history for this user.
-      let responses;
+      // Determine base directory.
+      let baseLogPath = user.baseLogPath;
+      mkdirp.sync(baseLogPath);
+
+      // Get message history for this user.
+      let messagesByDate = {};
 
       try {
-        responses = yield this.client.traverse(this.client.getHistorySlice.bind(this.client, peer));
+        messagesByDate = yield this.getMessagesByDateForPeer(peer, user.lastSaveDate);
       } catch (e) {
         this.log(`Got error for user ${userId}: ${e.message} -- skipping`, e.stack);
         continue;
       }
 
-      // Group messages by day.
-      let messagesByDate = {};
-
-      for (let response of responses) {
-        for (let message of response.messages.list) {
-          let date = moment(message.date * 1000).format('YYYY-MM-DD');
-
-          if (!messagesByDate[date]) {
-            messagesByDate[date] = [];
-          }
-
-          messagesByDate[date].push(message);
-        }
-      }
-
-      // Create base directory
-      let basePath = `./logs/${user.directoryName}`;
-      mkdirp.sync(basePath);
-
       // Save logs for each date.
-      let dates = Object.keys(messagesByDate);
-
-      for (let date of dates) {
-        // Sort messages chronologically.
-        messagesByDate[date] = _.sortBy(messagesByDate[date], 'id');
-
+      for (let date in messagesByDate) {
         // Format each line for this day.
         let lines = _.map(messagesByDate[date], (message) => {
           let sender = this.allUsers[message.from_id];
@@ -130,16 +109,74 @@ class LogSaver extends require('../lib/App') {
           }
 
           return `[${timestamp}] ${sender.displayName}: ${contents}`;
-        });
+        }).join("\n");
 
         // Write file
-        fs.writeFileSync(`${basePath}/${date}.txt`, lines.join("\n"));
+        let filePath = baseLogPath + path.sep + `${date}.txt`;
+        fs.writeFileSync(filePath, lines);
       }
 
-      this.log(`Done with ${user.fullName} (${dates.length} day(s) of messages saved to ${basePath}`);
+      this.log(`Done with ${user.fullName} (${Object.keys(messagesByDate).length} day(s) of messages saved to ${baseLogPath})`);
     }
 
     this.log('Done saving logs.');
+  }
+
+  /**
+   * Fetch & group message history for a peer.
+   *
+   * @param {Object} peer
+   * @param {String} [since] -- fetch only messages on or after this date (YYYY-MM-DD format)
+   * @return {Object} messages grouped by day, sorted chronologically.
+   */
+  *getMessagesByDateForPeer(peer, since) {
+    /**
+     * Per-page callback. Only download what we need.
+     *
+     * @param {Object} res -- getHistorySlice response
+     * @return {Boolean} -- true to break traversal
+     */
+    function breaker(res) {
+      for (let message of res.messages.list) {
+        let messageDate = moment(message.date * 1000).format('YYYY-MM-DD');
+
+        if (messageDate < since) {
+          // We don't need any more pages.
+          App.debug(`Not paging anymore, we have all new messages on or after ${since}`);
+          return true;
+        }
+      }
+    }
+
+    let responses = yield this.client.traverse(this.client.getHistorySlice.bind(this.client, peer), 0, since ? breaker : undefined);
+
+    // Group messages by day.
+    let messagesByDate = {};
+
+    for (let response of responses) {
+      for (let message of response.messages.list) {
+        let messageDate = moment(message.date * 1000).format('YYYY-MM-DD');
+
+        if (since && messageDate < since) {
+          // This is before the date we care about, drop the message.
+          //App.debug('Skipping message in fetched page from', messageDate);
+          continue;
+        }
+
+        if (!messagesByDate[messageDate]) {
+          messagesByDate[messageDate] = [];
+        }
+
+        messagesByDate[messageDate].push(message);
+      }
+    }
+
+    // Sort messages chronologically.
+    for (let date in messagesByDate) {
+      messagesByDate[date] = _.sortBy(messagesByDate[date], 'id');
+    }
+
+    return messagesByDate;
   }
 }
 
