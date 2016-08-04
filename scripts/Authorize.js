@@ -41,6 +41,7 @@ class Authorize extends require('../lib/App') {
       // Dynamic message & unhandled error handling
       switch (true) {
         case /PHONE_MIGRATE/.test(e.message):
+        case /NETWORK_MIGRATE/.test(e.message):
           // We need to switch data centers.
           let dcNumber = e.message.substr(-1, 1);
           yield this.saveDataCenter(dcNumber);
