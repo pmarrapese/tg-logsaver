@@ -8,11 +8,23 @@ const Utility = require('../lib/Utility');
 
 class Authorize extends require('../lib/App') {
   *run() {
+    yield this.getAppCredentials();
     yield this.connect(false);
     yield this.sendLoginCode();
     yield this.login();
     this.saveAuthKey();
     process.exit(0);
+  }
+
+  /**
+   * Prompt for the user's Telegram app ID and app hash.
+   */
+  *getAppCredentials() {
+    let appId = yield Utility.question('Please enter your Telegram app ID (obtainable at https://my.telegram.org/apps):');
+    this.config.app.id = appId || this.config.app.id;
+
+    let appHash = yield Utility.question('Please enter your Telegram app hash (obtainable at https://my.telegram.org/apps):');
+    this.config.app.hash = appHash || this.config.app.hash;
   }
 
   /**
@@ -31,7 +43,7 @@ class Authorize extends require('../lib/App') {
       switch (e.message) {
         case 'CONNECTION_API_ID_INVALID':
         case 'API_ID_INVALID':
-          return this.die('Your Telegram app configuration does not appear to be correct. Please verify the app ID and hash in the config file.');
+          return this.die('Your Telegram app configuration does not appear to be correct. Please verify the app ID and hash are correct.');
         case 'PHONE_NUMBER_INVALID':
           return this.die('Invalid phone number.');
         case 'PHONE_PASSWORD_PROTECTED':
