@@ -5,14 +5,28 @@
 "use strict";
 
 const TelegramUser = require('../lib/TelegramUser');
-const Utility = require('../lib/Utility');
 const moment = require('moment');
 const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
+const EventEmitter = require('events').EventEmitter;
+const ProgressBar = require('progress');
 
 class LogSaver extends require('../lib/App') {
   *run() {
+    this.emitter = new EventEmitter();
+
+    if (!App.isDebugging) {
+      this.progressBar = new ProgressBar(`[:bar] (ETA: :eta s)`, {
+        width: process.stdout.columns,
+        total: 100,
+        complete: '=',
+        incomplete: ' '
+      });
+
+      this.emitter.on('progress', (percent) => this.progressBar.update(percent));
+    }
+
     try {
       yield this.connect();
       yield this.getUsers();
@@ -61,7 +75,7 @@ class LogSaver extends require('../lib/App') {
   *saveLogs() {
     for (let userId of this.dialogUserIds) {
       let user = this.allUsers[userId];
-      this.log(`Fetching history for ${user.fullName}`);
+      this.log(`Fetching history for ${user.fullName || user.displayName}`);
       let peer = user.inputPeer;
 
       if (!peer) {
@@ -116,7 +130,7 @@ class LogSaver extends require('../lib/App') {
         fs.writeFileSync(filePath, lines);
       }
 
-      this.log(`Done with ${user.fullName} (${Object.keys(messagesByDate).length} day(s) of messages saved to ${baseLogPath})`);
+      this.debug(`Done with ${user.fullName || user.displayName} (${Object.keys(messagesByDate).length} day(s) of messages saved to ${baseLogPath})`);
     }
 
     this.log('Done saving logs.');
@@ -131,12 +145,23 @@ class LogSaver extends require('../lib/App') {
    */
   *getMessagesByDateForPeer(peer, since) {
     /**
-     * Per-page callback. Only download what we need.
+     * Per-page callback. Raise status events & only download what we need.
      *
      * @param {Object} res -- getHistorySlice response
      * @return {Boolean} -- true to break traversal
      */
-    function breaker(res) {
+    let offset = 0;
+
+    let breaker = (res) => {
+      // Update the progress bar.
+      offset += res.messages.list.length;
+      this.emitter.emit('progress', offset / res.count);
+
+      if (!since) {
+        return;
+      }
+
+      // Only download what we need.
       for (let message of res.messages.list) {
         let messageDate = moment(message.date * 1000).format('YYYY-MM-DD');
 
@@ -146,9 +171,11 @@ class LogSaver extends require('../lib/App') {
           return true;
         }
       }
-    }
+    };
 
-    let responses = yield this.client.traverse(this.client.getHistorySlice.bind(this.client, peer), 0, since ? breaker : undefined);
+    this.emitter.emit('progress', 0);
+    let responses = yield this.client.traverse(this.client.getHistorySlice.bind(this.client, peer), 0, breaker);
+    this.emitter.emit('progress', 100);
 
     // Group messages by day.
     let messagesByDate = {};

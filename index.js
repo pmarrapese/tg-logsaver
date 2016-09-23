@@ -18,5 +18,5 @@ switch (action.toLowerCase()) {
 }
 
 new App({
-  isDebugging: true
+  isDebugging: false
 });
