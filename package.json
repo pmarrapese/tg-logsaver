@@ -13,12 +13,15 @@
   },
   "homepage": "https://github.com/pmarrapese/tg-logsaver",
   "bugs": "https://github.com/pmarrapese/tg-logsaver/issues",
-  "main": "index.js",
+  "preferGlobal": true,
+  "bin": {
+    "tg-logsaver": "./index.js"
+  },
   "keywords": [
     "telegram"
   ],
   "dependencies": {
-    "@pmarrapese/node-boilerplate": "git+https://github.com/pmarrapese/node-boilerplate.git",
+    "@pmarrapese/node-boilerplate": "git+https://github.com/pmarrapese/node-boilerplate.git#0.0.3",
     "get-log": "latest",
     "lodash": "^4.12.0",
     "mkdirp": "^0.5.1",
