@@ -1,6 +1,6 @@
 {
   "name": "tg-logsaver",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Save message history from Telegram Messenger",
   "license": "ISC",
   "author": {
